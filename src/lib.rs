@@ -95,7 +95,7 @@ impl Throttle {
         self.set_executing(false);
     }
 
-    pub async fn call<F, R>(&self, f: F) -> R::Output
+    pub async fn call<F, R>(&self, f: F) -> Option<R::Output>
     where
         F: Fn() -> R,
         R: Future,
@@ -106,7 +106,7 @@ impl Throttle {
             self.set_executing(true);
             let ret = f().await;
             self.executed();
-            ret
+            Some(ret)
         } else if self.is_dirty() {
             println!("in dirty..");
             let remaining = self.remaining_time().expect("must have a remaining time");
@@ -114,9 +114,10 @@ impl Throttle {
             self.set_executing(true);
             let ret = f().await;
             self.executed();
-            ret
+            Some(ret)
         } else {
-            unreachable!();
+            log::info!("not executing...");
+            None
         }
     }
 }
